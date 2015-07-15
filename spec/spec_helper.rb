@@ -7,7 +7,6 @@ require 'rspec'
 require 'dynamoid'
 require 'pry'
 require 'mocha'
-require 'aws-sdk-v1'
 require 'aws-sdk'
 
 ENV['ACCESS_KEY'] ||= 'abcd'
