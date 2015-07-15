@@ -8,20 +8,20 @@ require 'dynamoid'
 require 'pry'
 require 'mocha'
 require 'aws-sdk-v1'
+require 'aws-sdk'
 
 ENV['ACCESS_KEY'] ||= 'abcd'
 ENV['SECRET_KEY'] ||= '1234'
 
-AWS.config({
+Aws.config.update({
     :access_key_id => ENV['ACCESS_KEY'],
     :secret_access_key => ENV['SECRET_KEY'],
-    :dynamo_db_endpoint => 'localhost',
-    :dynamo_db_port => '4567',
-    :use_ssl => false
+    :region => 'default',
+    :endpoint => 'http://localhost:61111'
 })
 
 Dynamoid.configure do |config|
-  config.adapter = 'aws_sdk'
+  config.adapter = 'aws_sdk_2'
   config.namespace = 'dynamoid_tests'
   config.warn_on_scan = false
 end
