@@ -1,5 +1,5 @@
 # encoding: utf-8
-require 'aws'
+require 'aws-sdk-v1'
 
 module Dynamoid
   module Adapter
