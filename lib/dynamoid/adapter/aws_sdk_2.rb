@@ -1,6 +1,8 @@
 # encoding: utf-8
 require 'aws-sdk'
 
+require 'dynamoid/adapter/table_definition'
+
 module Dynamoid
   module Adapter
 
@@ -109,71 +111,16 @@ module Dynamoid
       def create_table(table_name, key = :id, options = {})
         Dynamoid.logger.info "Creating #{table_name} table. This could take a while."
 
-        options[:hash_key] ||= {key.to_sym => :string}
-        read_capacity  = options[:read_capacity]  || Dynamoid::Config.read_capacity
-        write_capacity = options[:write_capacity] || Dynamoid::Config.write_capacity
+        options[:hash_key]       ||= { key.to_sym => :string }
+        options[:read_capacity]  ||= Dynamoid::Config.read_capacity
+        options[:write_capacity] ||= Dynamoid::Config.write_capacity
 
-        table_definition = {
-          table_name:            table_name,
-          attribute_definitions: attribute_definitions(options),
-          key_schema:            key_schema(options),
-          provisioned_throughput: {
-            read_capacity_units:  read_capacity,
-            write_capacity_units: write_capacity,
-          }
-        }
-
-        table = @@connection.create_table(table_definition)
+        table_definition = Dynamoid::Adapter::TableDefinition.new(table_name, options).to_h
+        table            = @@connection.create_table(table_definition)
 
         sleep 0.5 while table.table_description.table_status == 'CREATING'
 
         return table
-      end
-
-      def key_schema(options)
-        hash_key, range_key = options.values_at(:hash_key, :range_key)
-
-        schema = []
-        schema << key_schema_element(hash_key,  :hash)
-        schema << key_schema_element(range_key, :range) if range_key
-
-        schema
-      end
-
-      def key_schema_element(desc, key_type)
-        (name, type) = desc.to_a.first
-
-        {
-          attribute_name: name.to_s,
-          key_type:       key_type.to_s.upcase
-        }
-      end
-
-      def attribute_definitions(options)
-        hash_key, range_key = options.values_at(:hash_key, :range_key)
-
-        # default options for :hash_key
-        hash_key ||= { :id => :string }
-
-        schema = []
-        schema << schema_element(hash_key,  :hash)
-        schema << schema_element(range_key, :range) if range_key
-
-        schema
-      end
-
-      def schema_element(desc, key_type)
-        (name, type) = desc.to_a.first
-
-        unless [:string, :number, :binary].include?(type)
-          msg = "invalid #{key_type} key type, expected :string, :number or :binary"
-          raise ArgumentError, msg
-        end
-
-        {
-          attribute_name: name.to_s,
-          attribute_type: type.to_s[0,1].upcase
-        }
       end
 
       # Removes an item from DynamoDB.
