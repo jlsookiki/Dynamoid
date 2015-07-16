@@ -1,6 +1,6 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
-describe "Dynamoid::Document" do
+describe "Dynamoid::Document", skip: true do
 
   it 'initializes a new document' do
     @address = Address.new

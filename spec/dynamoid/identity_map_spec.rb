@@ -1,6 +1,6 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
-describe "Dynamoid::IdentityMap" do
+describe "Dynamoid::IdentityMap", skip: true do
   before :each do
     Dynamoid::Config.identity_map = true
   end

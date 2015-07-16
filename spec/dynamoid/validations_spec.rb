@@ -1,6 +1,7 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
-describe "Dynamoid::Validations" do
+describe "Dynamoid::Validations", skip: true do
+
   before do
     @document = Class.new do
       include Dynamoid::Document
