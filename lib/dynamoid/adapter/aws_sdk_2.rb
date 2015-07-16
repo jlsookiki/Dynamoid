@@ -199,9 +199,8 @@ module Dynamoid
       # @since 0.2.0
       def delete_table(table_name)
         Dynamoid.logger.info "Deleting #{table_name} table. This could take a while."
-        table = @@connection.tables[table_name]
-        table.delete
-        sleep 0.5 while table.exists? == true
+        table = @@connection.delete_table(table_name: table_name)
+        sleep 0.5 while table.table_description.table_status == 'DELETING'
       end
 
       # @todo Add a DescribeTable method.

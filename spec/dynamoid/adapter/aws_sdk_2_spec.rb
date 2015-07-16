@@ -160,7 +160,7 @@ describe Dynamoid::Adapter::AwsSdk2 do
 
   end
 
-  describe "#create_table" do
+  describe "#delete_table" do
 
     context "without a preexisting table" do
       let(:table_name) { "#{Dynamoid::Config.namespace}-table" }
