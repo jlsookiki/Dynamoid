@@ -6,7 +6,7 @@ module Dynamoid
 
     # The AwsSdk adapter provides support for the AWS-SDK for Ruby gem.
     # More information is available at that Gem's Github page:
-    # https://github.com/amazonwebservices/aws-sdk-for-ruby
+    # https://github.com/aws/aws-sdk-ruby
     #
     module AwsSdk2
       extend self
