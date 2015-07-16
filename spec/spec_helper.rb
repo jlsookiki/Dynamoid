@@ -1,7 +1,7 @@
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 
-MODELS = File.join(File.dirname(__FILE__), "app/models")
+#MODELS = File.join(File.dirname(__FILE__), "app/models")
 
 require 'rspec'
 require 'dynamoid'
@@ -31,18 +31,24 @@ Dynamoid.logger.level = Logger::FATAL
 # in ./support/ and its subdirectories.
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
 
-Dir[ File.join(MODELS, "*.rb") ].sort.each { |file| require file }
+# Dir[ File.join(MODELS, "*.rb") ].sort.each { |file| require file }
 
 RSpec.configure do |config|
   config.alias_it_should_behave_like_to :configured_with, "configured with"
   config.mock_with(:mocha)
 
-  config.before(:each) do
+  # config.before(:each) do
+  #   Dynamoid::Adapter.list_tables.each do |table|
+  #     if table =~ /^#{Dynamoid::Config.namespace}/
+  #       table = Dynamoid::Adapter.get_table(table)
+  #       table.items.each {|i| i.delete}
+  #     end
+  #   end
+  # end
+
+  config.before(:suite) do
     Dynamoid::Adapter.list_tables.each do |table|
-      if table =~ /^#{Dynamoid::Config.namespace}/
-        table = Dynamoid::Adapter.get_table(table)
-        table.items.each {|i| i.delete}
-      end
+      Dynamoid::Adapter.delete_table(table) if table =~ /^#{Dynamoid::Config.namespace}/
     end
   end
 
