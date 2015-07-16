@@ -181,10 +181,11 @@ module Dynamoid
       # List all tables on DynamoDB.
       #
       # @since 0.2.0
+      #
+      # @todo The tables_names array is restricted to 100 items.
+      # For more than 100 items the result of list_tables has to be paginated.
+      # See http://docs.aws.amazon.com/sdkforruby/api/Aws/DynamoDB/Client.html#list_tables-instance_method
       def list_tables
-        # TODO: The tables_names array is restricted to 100 items. For more than
-        # 100 items the result of list_tables has to be paginated.
-        # See http://docs.aws.amazon.com/sdkforruby/api/Aws/DynamoDB/Client.html#list_tables-instance_method
         @@connection.list_tables.table_names
       end
 
