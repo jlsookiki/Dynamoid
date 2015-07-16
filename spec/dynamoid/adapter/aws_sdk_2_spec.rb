@@ -1,7 +1,7 @@
-require 'dynamoid/adapter/aws_sdk'
-require File.expand_path(File.dirname(__FILE__) + '../../../spec_helper')
+require 'spec_helper'
+require 'dynamoid/adapter/aws_sdk_2'
 
-describe Dynamoid::Adapter::AwsSdk do
+describe Dynamoid::Adapter::AwsSdk2 do
   before(:each) do
     pending "You must have an active DynamoDB connection" unless ENV['ACCESS_KEY'] && ENV['SECRET_KEY']
   end
@@ -11,27 +11,27 @@ describe Dynamoid::Adapter::AwsSdk do
   # name of the table. An after(:each) handler drops any tables created this way after each test
   #
   # Name => Constructor args
-  {
-    1 => [:id],
-    2 => [:id],
-    3 => [:id, {:range_key => {:range => :number}}],
-    4 => [:id, {:range_key => {:range => :number}}]
-  }.each do |n, args|
-    name = "dynamoid_tests_TestTable#{n}"
-    let(:"test_table#{n}") do
-      Dynamoid::Adapter.create_table(name, *args)
-      @created_tables << name
-      name
-    end
-  end
-  
-  before(:each) { @created_tables = [] }
-  after(:each) do
-    @created_tables.each do |t|
-      Dynamoid::Adapter.delete_table(t)
-    end
-  end
-  
+  # {
+  #   1 => [:id],
+  #   2 => [:id],
+  #   3 => [:id, {:range_key => {:range => :number}}],
+  #   4 => [:id, {:range_key => {:range => :number}}]
+  # }.each do |n, args|
+  #   name = "dynamoid_tests_TestTable#{n}"
+  #   let(:"test_table#{n}") do
+  #     Dynamoid::Adapter.create_table(name, *args)
+  #     @created_tables << name
+  #     name
+  #   end
+  # end
+
+  # before(:each) { @created_tables = [] }
+  # after(:each) do
+  #   @created_tables.each do |t|
+  #     Dynamoid::Adapter.delete_table(t)
+  #   end
+  # end
+
   #
   # Returns a random key parition if partitioning is on, or an empty string if
   # it is off, useful for shared examples where partitioning may or may not be on
@@ -108,17 +108,74 @@ describe Dynamoid::Adapter::AwsSdk do
       query[0].should == {:id => '1', :order => 6, :range => BigDecimal.new(6)}
     end
   end
-  
-  
-  context 'without a preexisting table' do
-    # CreateTable and DeleteTable
-    it 'performs CreateTable and DeleteTable' do
-      table = Dynamoid::Adapter.create_table('CreateTable', :id, :range_key =>  { :created_at => :number })
 
-      Dynamoid::Adapter.connection.tables.collect{|t| t.name}.should include 'CreateTable'
 
-      Dynamoid::Adapter.delete_table('CreateTable')
+  describe "#create_table" do
+
+    let(:table_name)    { "#{Dynamoid::Config.namespace}-table" }
+    let(:capacity)      { 99 }
+    let(:table_options) { { read_capacity: capacity, write_capacity: capacity, range_key: { created_at: :number } } }
+
+    let(:table) do
+      Dynamoid::Adapter::AwsSdk2.create_table(table_name, :id, table_options)
     end
+
+    after :each do
+      Dynamoid::Adapter::AwsSdk2.connection.delete_table(table_name: table_name)
+    end
+
+    it "creates a new table" do
+      table
+
+      expect(
+        Dynamoid::Adapter::AwsSdk2.connection.list_tables.table_names
+      ).to include(table_name)
+    end
+
+    context "the tables throughput" do
+
+      subject { table.table_description.to_h[:provisioned_throughput] }
+
+      it { is_expected.to include({ read_capacity_units: capacity, write_capacity_units: capacity }) }
+
+    end
+
+    context "the tables attributes" do
+
+      subject { table.table_description.to_h[:attribute_definitions] }
+
+      it { is_expected.to include(attribute_name: "id",         attribute_type: "S") }
+      it { is_expected.to include(attribute_name: "created_at", attribute_type: "N") }
+
+    end
+
+    context "the tables key schema" do
+
+      subject { table.table_description.to_h[:key_schema] }
+
+      it { is_expected.to include(attribute_name: "id",         key_type: "HASH") }
+      it { is_expected.to include(attribute_name: "created_at", key_type: "RANGE") }
+
+    end
+
+  end
+
+  describe "#create_table" do
+
+    context "without a preexisting table" do
+      let(:table_name) { "#{Dynamoid::Config.namespace}-table" }
+
+      it "deletes the table" do
+        Dynamoid::Adapter::AwsSdk2.create_table(table_name)
+        Dynamoid::Adapter::AwsSdk2.delete_table(table_name)
+
+        expect(
+          Dynamoid::Adapter::AwsSdk2.connection.list_tables.table_names
+        ).to_not include(table_name)
+      end
+
+    end
+
   end
 
 
