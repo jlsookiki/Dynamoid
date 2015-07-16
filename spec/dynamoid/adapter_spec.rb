@@ -29,47 +29,47 @@ describe Dynamoid::Adapter do
     end
 
     it 'writes through the adapter' do
-      described_class.expects(:put_item).with(test_table, {:id => single_id}, nil).returns(true)
+      expect(described_class).to receive(:put_item).with(test_table, {:id => single_id}, nil).and_return(true)
       described_class.write(test_table, {:id => single_id})
     end
 
     it 'reads through the adapter for one ID' do
-      described_class.expects(:get_item).with(test_table, single_id, {}).returns(true)
+      expect(described_class).to receive(:get_item).with(test_table, single_id, {}).and_return(true)
       described_class.read(test_table, single_id)
     end
 
     it 'reads through the adapter for many IDs' do
-      described_class.expects(:batch_get_item).with({test_table => many_ids}, {}).returns(true)
+      expect(described_class).to receive(:batch_get_item).with({test_table => many_ids}, {}).and_return(true)
       described_class.read(test_table, many_ids)
     end
 
     it 'delete through the adapter for one ID' do
-      described_class.expects(:delete_item).with(test_table, single_id, {}).returns(nil)
+      expect(described_class).to receive(:delete_item).with(test_table, single_id, {}).and_return(nil)
       described_class.delete(test_table, single_id)
     end
 
     it 'deletes through the adapter for many IDs' do
-      described_class.expects(:batch_delete_item).with({test_table => many_ids}).returns(nil)
+      expect(described_class).to receive(:batch_delete_item).with({test_table => many_ids}).and_return(nil)
       described_class.delete(test_table, many_ids)
     end
 
     it 'reads through the adapter for one ID and a range key' do
-      described_class.expects(:get_item).with(test_table, single_id, :range_key => 2.0).returns(true)
+      expect(described_class).to receive(:get_item).with(test_table, single_id, :range_key => 2.0).and_return(true)
       described_class.read(test_table, single_id, :range_key => 2.0)
     end
 
     it 'reads through the adapter for many IDs and a range key' do
-      described_class.expects(:batch_get_item).with({test_table => [['1', 2.0], ['2', 2.0]]}, {}).returns(true)
+      expect(described_class).to receive(:batch_get_item).with({test_table => [['1', 2.0], ['2', 2.0]]}, {}).and_return(true)
       described_class.read(test_table, many_ids, :range_key => 2.0)
     end
 
     it 'deletes through the adapter for one ID and a range key' do
-      described_class.expects(:delete_item).with(test_table, single_id, :range_key => 2.0).returns(nil)
+      expect(described_class).to receive(:delete_item).with(test_table, single_id, :range_key => 2.0).and_return(nil)
       described_class.delete(test_table, single_id, :range_key => 2.0)
     end
 
     it 'deletes through the adapter for many IDs and a range key' do
-      described_class.expects(:batch_delete_item).with({test_table => [['1', 2.0], ['2', 2.0]]}).returns(nil)
+      expect(described_class).to receive(:batch_delete_item).with({test_table => [['1', 2.0], ['2', 2.0]]}).and_return(nil)
       described_class.delete(test_table, many_ids, :range_key => [2.0,2.0])
     end
   end
@@ -78,7 +78,7 @@ describe Dynamoid::Adapter do
     let(:partition_range){0...Dynamoid::Config.partition_size}
 
     it 'writes through the adapter', skip: true do
-      Random.expects(:rand).with(Dynamoid::Config.partition_size).once.returns(0)
+      Random.expects(:rand).with(Dynamoid::Config.partition_size).once.and_return(0)
       described_class.write(test_table, {:id => 'testid'})
 
       described_class.get_item(test_table, 'testid.0')[:id].should == 'testid.0'
@@ -86,22 +86,22 @@ describe Dynamoid::Adapter do
     end
 
     it 'reads through the adapter for one ID', skip: true do
-      described_class.expects(:batch_get_item).with({test_table => partition_range.map{|n| "123.#{n}"}}, {}).returns({})
+      expect(described_class).to receive(:batch_get_item).with({test_table => partition_range.map{|n| "123.#{n}"}}, {}).and_return({})
       described_class.read(test_table, single_id)
     end
 
     it 'reads through the adapter for many IDs', skip: true do
-      described_class.expects(:batch_get_item).with({test_table => partition_range.map{|n| "1.#{n}"} + partition_range.map{|n| "2.#{n}"}}, {}).returns({})
+      expect(described_class).to receive(:batch_get_item).with({test_table => partition_range.map{|n| "1.#{n}"} + partition_range.map{|n| "2.#{n}"}}, {}).and_return({})
       described_class.read(test_table, many_ids)
     end
 
     it 'reads through the adapter for one ID and a range key', skip: true do
-      described_class.expects(:batch_get_item).with({test_table => partition_range.map{|n| ["123.#{n}", 2.0]}}, {}).returns({})
+      expect(described_class).to receive(:batch_get_item).with({test_table => partition_range.map{|n| ["123.#{n}", 2.0]}}, {}).and_return({})
       described_class.read(test_table, single_id, :range_key => 2.0)
     end
 
     it 'reads through the adapter for many IDs and a range key', skip: true do
-      described_class.expects(:batch_get_item).with({test_table => partition_range.map{|n| ["1.#{n}", 2.0]} + partition_range.map{|n| ["2.#{n}", 2.0]}}, {}).returns({})
+      expect(described_class).to receive(:batch_get_item).with({test_table => partition_range.map{|n| ["1.#{n}", 2.0]} + partition_range.map{|n| ["2.#{n}", 2.0]}}, {}).and_return({})
       described_class.read(test_table, many_ids, :range_key => 2.0)
     end
 
@@ -132,22 +132,22 @@ describe Dynamoid::Adapter do
     end
 
     it 'delete through the adapter for one ID' do
-      described_class.expects(:batch_delete_item).with(test_table => partition_range.map{|n| "123.#{n}"}).returns(nil)
+      expect(described_class).to receive(:batch_delete_item).with(test_table => partition_range.map{|n| "123.#{n}"}).and_return(nil)
       described_class.delete(test_table, single_id)
     end
 
     it 'deletes through the adapter for many IDs' do
-      described_class.expects(:batch_delete_item).with(test_table => partition_range.map{|n| "1.#{n}"} + partition_range.map{|n| "2.#{n}"}).returns(nil)
+      expect(described_class).to receive(:batch_delete_item).with(test_table => partition_range.map{|n| "1.#{n}"} + partition_range.map{|n| "2.#{n}"}).and_return(nil)
       described_class.delete(test_table, many_ids)
     end
 
     it 'deletes through the adapter for one ID and a range key' do
-      described_class.expects(:batch_delete_item).with(test_table => partition_range.map{|n| ["123.#{n}", 2.0]}).returns(nil)
+      expect(described_class).to receive(:batch_delete_item).with(test_table => partition_range.map{|n| ["123.#{n}", 2.0]}).and_return(nil)
       described_class.delete(test_table, single_id, :range_key => 2.0)
     end
 
     it 'deletes through the adapter for many IDs and a range key' do
-      described_class.expects(:batch_delete_item).with(test_table => partition_range.map{|n| ["1.#{n}", 2.0]} + partition_range.map{|n| ["2.#{n}", 2.0]}).returns(nil)
+      expect(described_class).to receive(:batch_delete_item).with(test_table => partition_range.map{|n| ["1.#{n}", 2.0]} + partition_range.map{|n| ["2.#{n}", 2.0]}).and_return(nil)
       described_class.delete(test_table, many_ids, :range_key => [2.0,2.0])
     end
   end
