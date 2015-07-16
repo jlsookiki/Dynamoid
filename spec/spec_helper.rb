@@ -12,15 +12,15 @@ ENV['ACCESS_KEY'] ||= 'abcd'
 ENV['SECRET_KEY'] ||= '1234'
 
 Aws.config.update({
-    :access_key_id => ENV['ACCESS_KEY'],
-    :secret_access_key => ENV['SECRET_KEY'],
-    :region => 'default',
-    :endpoint => 'http://localhost:61111'
+  access_key_id:     ENV['ACCESS_KEY'],
+  secret_access_key: ENV['SECRET_KEY'],
+  region:            'default',
+  endpoint:          'http://localhost:61111'
 })
 
 Dynamoid.configure do |config|
-  config.adapter = 'aws_sdk_2'
-  config.namespace = 'dynamoid_tests'
+  config.adapter      = 'aws_sdk_2'
+  config.namespace    = 'dynamoid_tests'
   config.warn_on_scan = false
 end
 
