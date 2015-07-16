@@ -2,9 +2,6 @@ require 'spec_helper'
 require 'dynamoid/adapter/aws_sdk_2'
 
 describe Dynamoid::Adapter::AwsSdk2 do
-  before(:each) do
-    pending "You must have an active DynamoDB connection" unless ENV['ACCESS_KEY'] && ENV['SECRET_KEY']
-  end
 
   #
   # These let() definitions create tables "dynamoid_tests_TestTable<N>" and return the
@@ -39,7 +36,7 @@ describe Dynamoid::Adapter::AwsSdk2 do
   def key_partition
     Dynamoid::Config.partitioning? ? ".#{Random.rand(Dynamoid::Config.partition_size)}" : ''
   end
-    
+
   #
   # Tests adapter against ranged tables
   #
@@ -73,7 +70,7 @@ describe Dynamoid::Adapter::AwsSdk2 do
       Dynamoid::Adapter.query(test_table3, :hash_value => '1', :range_lte => 3.0).to_a.should =~ [{:id => '1', :range => BigDecimal.new(1)}, {:id => '1', :range => BigDecimal.new(3)}]
     end
   end
-  
+
   #
   # Tests scan_index_forwards flag behavior on range queries
   #
@@ -97,7 +94,7 @@ describe Dynamoid::Adapter::AwsSdk2 do
       query[4].should == {:id => '1', :order => 5, :range => BigDecimal.new(5)}
       query[5].should == {:id => '1', :order => 6, :range => BigDecimal.new(6)}
     end
-    
+
     it 'performs query on a table with a range and selects items less than that is in the correct order, scan_index_forward false' do
       query = Dynamoid::Adapter.query(test_table4, :hash_value => '1', :range_greater_than => 0, :scan_index_forward => false).to_a
       query[5].should == {:id => '1', :order => 1, :range => BigDecimal.new(1)}
@@ -178,8 +175,12 @@ describe Dynamoid::Adapter::AwsSdk2 do
 
   end
 
-
   context 'with a preexisting table without paritioning' do
+
+    before :each do
+      pending
+    end
+
     # GetItem, PutItem and DeleteItem
     it "performs GetItem for an item that does not exist" do
       Dynamoid::Adapter.get_item(test_table1, '1').should be_nil
@@ -261,17 +262,17 @@ describe Dynamoid::Adapter::AwsSdk2 do
       results[test_table3].should include({:name => 'Josh', :id => '1', :range => 1.0})
       results[test_table3].should include({:name => 'Justin', :id => '2', :range => 2.0})
     end
-    
+
     # BatchDeleteItem
     it "performs BatchDeleteItem with singular keys" do
       Dynamoid::Adapter.put_item(test_table1, {:id => '1', :name => 'Josh'})
       Dynamoid::Adapter.put_item(test_table2, {:id => '1', :name => 'Justin'})
 
       Dynamoid::Adapter.batch_delete_item(test_table1 => ['1'], test_table2 => ['1'])
-      
+
       results = Dynamoid::Adapter.batch_get_item(test_table1 => '1', test_table2 => '1')
       results.size.should == 0
-      
+
       results[test_table1].should_not include({:name => 'Josh', :id => '1'})
       results[test_table2].should_not include({:name => 'Justin', :id => '1'})
     end
@@ -281,10 +282,10 @@ describe Dynamoid::Adapter::AwsSdk2 do
       Dynamoid::Adapter.put_item(test_table1, {:id => '2', :name => 'Justin'})
 
       Dynamoid::Adapter.batch_delete_item(test_table1 => ['1', '2'])
-      
+
       results = Dynamoid::Adapter.batch_get_item(test_table1 => ['1', '2'])
       results.size.should == 0
-      
+
       results[test_table1].should_not include({:name => 'Josh', :id => '1'})
       results[test_table1].should_not include({:name => 'Justin', :id => '2'})
     end
@@ -307,7 +308,7 @@ describe Dynamoid::Adapter::AwsSdk2 do
       Dynamoid::Adapter.batch_delete_item(test_table3 => [['1', 1.0],['2', 2.0]])
       results = Dynamoid::Adapter.batch_get_item(test_table3 => [['1', 1.0],['2', 2.0]])
       results.size.should == 0
-       
+
       results[test_table3].should_not include({:name => 'Josh', :id => '1', :range => 1.0})
       results[test_table3].should_not include({:name => 'Justin', :id => '2', :range => 2.0})
     end
@@ -334,7 +335,7 @@ describe Dynamoid::Adapter::AwsSdk2 do
 
       Dynamoid::Adapter.query(test_table1, :hash_value => '1').first.should == { :id=> '1', :name=>"Josh" }
     end
-    
+
     it_behaves_like 'range queries'
 
     # Scan
@@ -364,11 +365,16 @@ describe Dynamoid::Adapter::AwsSdk2 do
 
       Dynamoid::Adapter.scan(test_table1, {}).should include({:name=>"Josh", :id=>"2"}, {:name=>"Josh", :id=>"1"})
     end
-    
+
     it_behaves_like 'correct ordering'
   end
-  
+
   context 'with a preexisting table with paritioning' do
+
+    before :each do
+      pending
+    end
+
     before(:all) do
       @previous_value = Dynamoid::Config.partitioning
       Dynamoid::Config.partitioning = true
@@ -425,9 +431,4 @@ describe Dynamoid::Adapter::AwsSdk2 do
     it_behaves_like 'correct ordering'
   end
 
-  # DescribeTable
-
-  # UpdateItem
-
-  # UpdateTable
 end
