@@ -1,6 +1,7 @@
 #MODELS = File.join(File.dirname(__FILE__), "app/models")
 
 require 'rspec'
+require 'rspec/its'
 require 'dynamoid'
 require 'pry'
 require 'aws-sdk'
