@@ -175,11 +175,7 @@ describe Dynamoid::Adapter::AwsSdk2 do
 
   end
 
-  context 'with a preexisting table without paritioning' do
-
-    before :each do
-      pending
-    end
+  context 'with a preexisting table without paritioning', skip: true do
 
     # GetItem, PutItem and DeleteItem
     it "performs GetItem for an item that does not exist" do
@@ -369,11 +365,7 @@ describe Dynamoid::Adapter::AwsSdk2 do
     it_behaves_like 'correct ordering'
   end
 
-  context 'with a preexisting table with paritioning' do
-
-    before :each do
-      pending
-    end
+  context 'with a preexisting table with paritioning', skip: true do
 
     before(:all) do
       @previous_value = Dynamoid::Config.partitioning
