@@ -190,7 +190,7 @@ describe Dynamoid::Adapter::AwsSdk2 do
         Dynamoid::Adapter::AwsSdk2.delete_table(table_name)
 
         expect(
-          Dynamoid::Adapter::AwsSdk2.connection.list_tables.table_names
+          Dynamoid::Adapter::AwsSdk2.client.list_tables.table_names
         ).to_not include(table_name)
       end
 

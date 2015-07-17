@@ -12,8 +12,8 @@ module Dynamoid
     #
     module AwsSdk2
       extend self
-      @@connection = nil
-      @@resource   = nil
+      @@client   = nil
+      @@resource = nil
 
       # Establish the connection to DynamoDB.
       #
@@ -41,10 +41,10 @@ module Dynamoid
       # dynamo_db_endpoint : dynamodb.ap-southeast-1.amazonaws.com)
       # @since 0.2.0
       def connect!
-        @@connection = Aws::DynamoDB::Client.new
-        @@resource   = Aws::DynamoDB::Resource.new(@@connection)
+        @@client = Aws::DynamoDB::Client.new
+        @@resource   = Aws::DynamoDB::Resource.new(@@client)
 
-        @@connection
+        @@client
       end
 
       # Return the client.
@@ -52,8 +52,8 @@ module Dynamoid
       # @return [AWS::DynamoDB::Client] the raw DynamoDB client
       #
       # @since 0.2.0
-      def connection
-        @@connection
+      def client
+        @@client
       end
 
       # Get many items at once from DynamoDB. More efficient than getting each item individually.
@@ -72,7 +72,7 @@ module Dynamoid
         return hash if table_ids.all?{|k, v| v.empty?}
         table_ids.each do |t, ids|
           Array(ids).in_groups_of(100, false) do |group|
-            batch = AWS::DynamoDB::BatchGet.new(:config => @@connection.config)
+            batch = AWS::DynamoDB::BatchGet.new(:config => @@client.config)
             batch.table(t, :all, Array(group), options) unless group.nil? || group.empty?
             batch.each do |table_name, attributes|
               hash[table_name] << attributes.symbolize_keys!
@@ -97,7 +97,7 @@ module Dynamoid
         return nil if options.all?{|k, v| v.empty?}
         options.each do |t, ids|
           Array(ids).in_groups_of(25, false) do |group|
-            batch = AWS::DynamoDB::BatchWrite.new(:config => @@connection.config)
+            batch = AWS::DynamoDB::BatchWrite.new(:config => @@client.config)
             batch.delete(t,group)
             batch.process!
           end
@@ -197,7 +197,7 @@ module Dynamoid
       # For more than 100 items the result of list_tables has to be paginated.
       # See http://docs.aws.amazon.com/sdkforruby/api/Aws/DynamoDB/Client.html#list_tables-instance_method
       def list_tables
-        @@connection.list_tables.table_names
+        @@client.list_tables.table_names
       end
 
       # Persists an item on DynamoDB.
