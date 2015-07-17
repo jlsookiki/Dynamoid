@@ -118,40 +118,63 @@ describe Dynamoid::Adapter::AwsSdk2 do
     end
 
     after :each do
-      Dynamoid::Adapter::AwsSdk2.connection.delete_table(table_name: table_name)
+      table.delete
     end
 
     it "creates a new table" do
-      table
-
-      expect(
-        Dynamoid::Adapter::AwsSdk2.connection.list_tables.table_names
-      ).to include(table_name)
+      expect(table.table_status).to eq("ACTIVE")
     end
 
     context "the tables throughput" do
 
-      subject { table.table_description.to_h[:provisioned_throughput] }
+      subject { table.provisioned_throughput }
 
-      it { is_expected.to include({ read_capacity_units: capacity, write_capacity_units: capacity }) }
+      its(:read_capacity_units)  { is_expected.to eq(capacity) }
+      its(:write_capacity_units) { is_expected.to eq(capacity) }
 
     end
 
     context "the tables attributes" do
 
-      subject { table.table_description.to_h[:attribute_definitions] }
+      context "the id attribute" do
 
-      it { is_expected.to include(attribute_name: "id",         attribute_type: "S") }
-      it { is_expected.to include(attribute_name: "created_at", attribute_type: "N") }
+        subject { table.attribute_definitions[0] }
+
+        its(:attribute_name) { is_expected.to eq("id") }
+        its(:attribute_type) { is_expected.to eq("S") }
+
+      end
+
+      context "the created_at attribute" do
+
+        subject { table.attribute_definitions[1] }
+
+        its(:attribute_name) { is_expected.to eq("created_at") }
+        its(:attribute_type) { is_expected.to eq("N") }
+
+      end
 
     end
 
     context "the tables key schema" do
 
-      subject { table.table_description.to_h[:key_schema] }
+      context "the hash key" do
 
-      it { is_expected.to include(attribute_name: "id",         key_type: "HASH") }
-      it { is_expected.to include(attribute_name: "created_at", key_type: "RANGE") }
+        subject { table.key_schema[0] }
+
+        its(:attribute_name) { is_expected.to eq("id") }
+        its(:key_type)       { is_expected.to eq("HASH") }
+
+      end
+
+      context "the range key" do
+
+        subject { table.key_schema[1] }
+
+        its(:attribute_name) { is_expected.to eq("created_at") }
+        its(:key_type)       { is_expected.to eq("RANGE") }
+
+      end
 
     end
 

@@ -13,10 +13,11 @@ module Dynamoid
     module AwsSdk2
       extend self
       @@connection = nil
+      @@resource   = nil
 
       # Establish the connection to DynamoDB.
       #
-      # @return [AWS::DynamoDB::Connection] the raw DynamoDB connection
+      # @return [Aws::DynamoDB::Client] the raw DynamoDB client
       # Call DynamoDB new, with no parameters.
       # Make sure the aws.yml file or aws.rb file, refer the link for more details.
       #https://github.com/amazonwebservices/aws-sdk-for-ruby
@@ -33,7 +34,7 @@ module Dynamoid
       #AWS.config(:logger => Rails.logger)
       # load credentials from a file
       #config_path = File.expand_path(File.dirname(__FILE__)+"/../aws.yml")
-      #AWS.config(YAML.load(File.read(config_path)))
+      #Aws.config(YAML.load(File.read(config_path)))
       #Additionally include any of the dynamodb paramters as needed
       #(eg: if you would like to change the dynamodb endpoint, then add the parameter in
       # the following paramter in the file  aws.yml or aws.rb
@@ -41,11 +42,14 @@ module Dynamoid
       # @since 0.2.0
       def connect!
         @@connection = Aws::DynamoDB::Client.new
+        @@resource   = Aws::DynamoDB::Resource.new(@@connection)
+
+        @@connection
       end
 
-      # Return the established connection.
+      # Return the client.
       #
-      # @return [AWS::DynamoDB::Connection] the raw DynamoDB connection
+      # @return [AWS::DynamoDB::Client] the raw DynamoDB client
       #
       # @since 0.2.0
       def connection
@@ -116,9 +120,9 @@ module Dynamoid
         options[:write_capacity] ||= Dynamoid::Config.write_capacity
 
         table_definition = Dynamoid::Adapter::TableDefinition.new(table_name, options).to_h
-        table            = @@connection.create_table(table_definition)
+        table            = @@resource.create_table(table_definition)
 
-        sleep 0.5 while table.table_description.table_status == 'CREATING'
+        sleep 0.5 while table.table_status == 'CREATING'
 
         return table
       end
@@ -146,8 +150,9 @@ module Dynamoid
       # @since 0.2.0
       def delete_table(table_name)
         Dynamoid.logger.info "Deleting #{table_name} table. This could take a while."
-        table = @@connection.delete_table(table_name: table_name)
-        sleep 0.5 while table.table_description.table_status == 'DELETING'
+        table = get_table(table_name)
+        table.delete
+        sleep 0.5 while table.table_status == 'DELETING'
       end
 
       # @todo Add a DescribeTable method.
@@ -270,8 +275,7 @@ module Dynamoid
 
       def get_table(table_name)
         unless table = table_cache[table_name]
-          table = @@connection.tables[table_name]
-          table.load_schema
+          table = @@resource.tables.detect { |table| table.table_name == table_name }
           table_cache[table_name] = table
         end
         table
