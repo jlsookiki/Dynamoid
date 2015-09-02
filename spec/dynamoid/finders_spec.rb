@@ -1,6 +1,6 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
-describe "Dynamoid::Finders" do
+describe "Dynamoid::Finders", skip: true do
 
   before do
     @address = Address.create(:city => 'Chicago')

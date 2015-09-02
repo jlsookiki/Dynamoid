@@ -1,6 +1,6 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
-describe "Dynamoid::Fields" do
+describe "Dynamoid::Fields", skip: true do
 
   before do
     @address = Address.new

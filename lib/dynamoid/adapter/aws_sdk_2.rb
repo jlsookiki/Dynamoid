@@ -1,22 +1,25 @@
 # encoding: utf-8
-require 'aws'
+require 'aws-sdk'
+
+require 'dynamoid/adapter/table_definition'
 
 module Dynamoid
   module Adapter
 
     # The AwsSdk adapter provides support for the AWS-SDK for Ruby gem.
     # More information is available at that Gem's Github page:
-    # https://github.com/amazonwebservices/aws-sdk-for-ruby
+    # https://github.com/aws/aws-sdk-ruby
     #
-    module AwsSdk
+    module AwsSdk2
       extend self
-      @@connection = nil
+      @@client   = nil
+      @@resource = nil
 
       # Establish the connection to DynamoDB.
       #
-      # @return [AWS::DynamoDB::Connection] the raw DynamoDB connection
-      # Call DynamoDB new, with no parameters. 
-      # Make sure the aws.yml file or aws.rb file, refer the link for more details. 
+      # @return [Aws::DynamoDB::Client] the raw DynamoDB client
+      # Call DynamoDB new, with no parameters.
+      # Make sure the aws.yml file or aws.rb file, refer the link for more details.
       #https://github.com/amazonwebservices/aws-sdk-for-ruby
       # 1. Create config/aws.yml as follows:
       # Fill in your AWS Access Key ID and Secret Access Key
@@ -31,23 +34,26 @@ module Dynamoid
       #AWS.config(:logger => Rails.logger)
       # load credentials from a file
       #config_path = File.expand_path(File.dirname(__FILE__)+"/../aws.yml")
-      #AWS.config(YAML.load(File.read(config_path)))
-      #Additionally include any of the dynamodb paramters as needed 
-      #(eg: if you would like to change the dynamodb endpoint, then add the parameter in 
-      # the following paramter in the file  aws.yml or aws.rb 
+      #Aws.config(YAML.load(File.read(config_path)))
+      #Additionally include any of the dynamodb paramters as needed
+      #(eg: if you would like to change the dynamodb endpoint, then add the parameter in
+      # the following paramter in the file  aws.yml or aws.rb
       # dynamo_db_endpoint : dynamodb.ap-southeast-1.amazonaws.com)
       # @since 0.2.0
       def connect!
-      @@connection = AWS::DynamoDB.new
+        @@client = Aws::DynamoDB::Client.new
+        @@resource   = Aws::DynamoDB::Resource.new(@@client)
+
+        @@client
       end
 
-      # Return the established connection.
+      # Return the client.
       #
-      # @return [AWS::DynamoDB::Connection] the raw DynamoDB connection
+      # @return [AWS::DynamoDB::Client] the raw DynamoDB client
       #
       # @since 0.2.0
-      def connection
-        @@connection
+      def client
+        @@client
       end
 
       # Get many items at once from DynamoDB. More efficient than getting each item individually.
@@ -66,7 +72,7 @@ module Dynamoid
         return hash if table_ids.all?{|k, v| v.empty?}
         table_ids.each do |t, ids|
           Array(ids).in_groups_of(100, false) do |group|
-            batch = AWS::DynamoDB::BatchGet.new(:config => @@connection.config)
+            batch = AWS::DynamoDB::BatchGet.new(:config => @@client.config)
             batch.table(t, :all, Array(group), options) unless group.nil? || group.empty?
             batch.each do |table_name, attributes|
               hash[table_name] << attributes.symbolize_keys!
@@ -75,7 +81,7 @@ module Dynamoid
         end
         hash
       end
-      
+
       # Delete many items at once from DynamoDB. More efficient than delete each item individually.
       #
       # @example Delete IDs 1 and 2 from the table testtable
@@ -91,9 +97,9 @@ module Dynamoid
         return nil if options.all?{|k, v| v.empty?}
         options.each do |t, ids|
           Array(ids).in_groups_of(25, false) do |group|
-            batch = AWS::DynamoDB::BatchWrite.new(:config => @@connection.config)
+            batch = AWS::DynamoDB::BatchWrite.new(:config => @@client.config)
             batch.delete(t,group)
-            batch.process!          
+            batch.process!
           end
         end
         nil
@@ -108,11 +114,16 @@ module Dynamoid
       # @since 0.2.0
       def create_table(table_name, key = :id, options = {})
         Dynamoid.logger.info "Creating #{table_name} table. This could take a while."
-        options[:hash_key] ||= {key.to_sym => :string}
-        read_capacity = options[:read_capacity] || Dynamoid::Config.read_capacity
-        write_capacity = options[:write_capacity] || Dynamoid::Config.write_capacity
-        table = @@connection.tables.create(table_name, read_capacity, write_capacity, options)
-        sleep 0.5 while table.status == :creating
+
+        options[:hash_key]       ||= { key.to_sym => :string }
+        options[:read_capacity]  ||= Dynamoid::Config.read_capacity
+        options[:write_capacity] ||= Dynamoid::Config.write_capacity
+
+        table_definition = Dynamoid::Adapter::TableDefinition.new(table_name, options).to_h
+        table            = @@resource.create_table(table_definition)
+
+        sleep 0.5 while table.table_status == 'CREATING'
+
         return table
       end
 
@@ -139,9 +150,9 @@ module Dynamoid
       # @since 0.2.0
       def delete_table(table_name)
         Dynamoid.logger.info "Deleting #{table_name} table. This could take a while."
-        table = @@connection.tables[table_name]
+        table = get_table(table_name)
         table.delete
-        sleep 0.5 while table.exists? == true
+        sleep 0.5 while table.table_status == 'DELETING'
       end
 
       # @todo Add a DescribeTable method.
@@ -174,15 +185,19 @@ module Dynamoid
         table = get_table(table_name)
         item = table.items.at(key, range_key)
         item.attributes.update(conditions.merge(:return => :all_new), &block)
-      rescue AWS::DynamoDB::Errors::ConditionalCheckFailedException
+      rescue Aws::DynamoDB::Errors::ConditionalCheckFailedException
         raise Dynamoid::Errors::ConditionalCheckFailedException
       end
 
       # List all tables on DynamoDB.
       #
       # @since 0.2.0
+      #
+      # @todo The tables_names array is restricted to 100 items.
+      # For more than 100 items the result of list_tables has to be paginated.
+      # See http://docs.aws.amazon.com/sdkforruby/api/Aws/DynamoDB/Client.html#list_tables-instance_method
       def list_tables
-        @@connection.tables.collect(&:name)
+        @@client.list_tables.table_names
       end
 
       # Persists an item on DynamoDB.
@@ -197,8 +212,8 @@ module Dynamoid
           object.delete_if{|k, v| v.nil? || (v.respond_to?(:empty?) && v.empty?)},
           options || {}
         )
-      rescue AWS::DynamoDB::Errors::ConditionalCheckFailedException => e
-        raise Dynamoid::Errors::ConditionalCheckFailedException        
+      rescue Aws::DynamoDB::Errors::ConditionalCheckFailedException => e
+        raise Dynamoid::Errors::ConditionalCheckFailedException
       end
 
       # Query the DynamoDB table. This employs DynamoDB's indexes so is generally faster than scanning, but is
@@ -260,8 +275,7 @@ module Dynamoid
 
       def get_table(table_name)
         unless table = table_cache[table_name]
-          table = @@connection.tables[table_name]
-          table.load_schema
+          table = @@resource.tables.detect { |table| table.table_name == table_name }
           table_cache[table_name] = table
         end
         table

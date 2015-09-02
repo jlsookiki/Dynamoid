@@ -1,16 +1,16 @@
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
+require 'spec_helper'
 
-describe "Dynamoid::Associations::HasMany" do
+describe "Dynamoid::Associations::HasMany", skip: true do
 
   before do
     @magazine = Magazine.create
     @user = User.create
     @camel_case = CamelCase.create
   end
-  
+
   it 'determines equality from its records' do
     @subscription = @magazine.subscriptions.create
-    
+
     @magazine.subscriptions.should == @subscription
   end
 
@@ -24,15 +24,15 @@ describe "Dynamoid::Associations::HasMany" do
     @magazine.subscriptions.send(:target_class).should == Subscription
     @user.books.send(:target_class).should == Magazine
   end
-  
+
   it 'determines target attribute' do
     @magazine.subscriptions.send(:target_attribute).should == :magazine_ids
     @user.books.send(:target_attribute).should == :owner_ids
   end
-  
+
   it 'associates belongs_to automatically' do
     @subscription = @magazine.subscriptions.create
-    
+
     @subscription.magazine.should == @magazine
 
     @magazine = @user.books.create

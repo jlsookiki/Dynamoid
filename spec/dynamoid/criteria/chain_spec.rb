@@ -1,6 +1,6 @@
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
+require 'spec_helper'
 
-describe "Dynamoid::Associations::Chain" do
+describe "Dynamoid::Associations::Chain", skip: true do
 
   before(:each) do
     @time = DateTime.now
@@ -174,7 +174,7 @@ describe "Dynamoid::Associations::Chain" do
       @chain.send(:where, query).to_a.should == [@post2]
     end
   end
-  
+
   context 'destroy alls' do
     before do
       @tweet1 = Tweet.create(:tweet_id => "x", :group => "one")
@@ -182,7 +182,7 @@ describe "Dynamoid::Associations::Chain" do
       @tweet3 = Tweet.create(:tweet_id => "xx", :group => "two")
       @chain = Dynamoid::Criteria::Chain.new(Tweet)
     end
-    
+
     it 'destroys tweet with a range simple range query' do
       @chain.query = { :tweet_id => "x" }
       @chain.all.size.should == 2

@@ -1,6 +1,6 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
-describe 'Dynamoid::Dirty' do
+describe 'Dynamoid::Dirty', skip: true do
 
   context 'changes' do
     it 'should be empty' do
@@ -22,7 +22,7 @@ describe 'Dynamoid::Dirty' do
       tweet.reload
       tweet.changed?.should be_false
     end
-    
+
     it 'should be empty after an update' do
       tweet = Tweet.create!(:tweet_id => "1", :group => 'abc')
       tweet.update! do |t|

@@ -1,6 +1,6 @@
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
+require 'spec_helper'
 
-describe "Dynamoid::Associations::Association" do
+describe "Dynamoid::Associations::Association", skip: true do
 
   before do
     Subscription.create_table
