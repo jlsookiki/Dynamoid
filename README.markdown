@@ -10,6 +10,9 @@ DynamoDB is not like other document-based databases you might know, and is very 
 
 But if you want a fast, scalable, simple, easy-to-use database (and a Gem that supports it) then look no further!
 
+## Notes
+This version includes an adapter for AWS SDK 2.  It is stil a work in progress.
+
 ## Installation
 
 Installing Dynamoid is pretty simple. First include the Gem in your Gemfile:
